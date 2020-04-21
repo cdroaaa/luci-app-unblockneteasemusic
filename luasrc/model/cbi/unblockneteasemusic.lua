@@ -12,19 +12,25 @@ enable.description = translate("启用本插件以解除网易云音乐播放限
 enable.default = 0
 enable.rmempty = false
 
-music_source = s:option(ListValue, "music_source", translate("音源接口"))
+music_source = s:option(Value, "music_source", translate("音源接口"))
 music_source:value("default", translate("默认"))
+music_source:value("netease", translate("网易云音乐"))
 music_source:value("qq", translate("QQ音乐"))
-music_source:value("xiami", translate("虾米音乐"))
-music_source:value("baidu", translate("百度音乐"))
-music_source:value("kugou", translate("酷狗音乐"))
 music_source:value("kuwo", translate("酷我音乐"))
 music_source:value("migu", translate("咕咪音乐"))
+music_source:value("kugou", translate("酷狗音乐"))
+music_source:value("xiami", translate("虾米音乐"))
+music_source:value("baidu", translate("百度音乐"))
 music_source:value("joox", translate("JOOX音乐"))
 music_source:value("youtube", translate("Youtube音乐"))
-music_source.description = translate("音源调用接口")
+music_source.description = translate("自定义模式下，多个音源请用空格隔开")
 music_source.default = "default"
 music_source.rmempty = false
+
+neteasemusic_cookie = s:option(Value, "neteasemusic_cookie", translate("NeteaseMusic Cookie"))
+neteasemusic_cookie.description = translate("在 music.163.com 获取，需要MUSIC_U值")
+neteasemusic_cookie.datatype = "string"
+neteasemusic_cookie:depends("music_source", "netease")
 
 qq_cookie = s:option(Value, "qq_cookie", translate("QQ Cookie"))
 qq_cookie.description = translate("在 y.qq.com 获取，需要uin和qm_keyst值")
@@ -36,6 +42,11 @@ youtube_key = s:option(Value, "youtube_key", translate("Youtube API Key"))
 youtube_key.description = translate("API Key申请地址：https://developers.google.com/youtube/v3/getting-started#before-you-start")
 youtube_key.datatype = "string"
 youtube_key:depends("music_source", "youtube")
+
+enable_flac = s:option(Flag, "enable_flac", translate("启用无损音质"))
+enable_flac.description = translate("目前仅支持QQ、酷我、咪咕音源")
+enable_flac.default = 0
+enable_flac.rmempty = false
 
 auto_update = s:option(Flag, "auto_update", translate("启用自动更新"))
 auto_update.description = translate("启用后，每天将定时自动检查最新版本并更新")
@@ -155,5 +166,29 @@ self_issue_cert_key.description = translate("[私钥] 默认使用UnblockNetease
 self_issue_cert_key.placeholder = "/usr/share/unblockneteasemusic/core/server.key"
 self_issue_cert_key.datatype = "file"
 self_issue_cert_key:depends("advanced_mode", 1)
+
+acl_rule = mp:section(TypedSection,"acl_rule",translate("例外客户端规则"), translate("可以为局域网客户端分别设置不同的例外模式，默认无需设置"))
+acl_rule.template="cbi/tblsection"
+acl_rule.sortable=true
+acl_rule.anonymous=true
+acl_rule.addremove=true
+
+acl_ip_addr=acl_rule:option(Value, "ip_addr", translate("IP 地址"))
+acl_ip_addr.width = "40%"
+acl_ip_addr.datatype = "ip4addr"
+acl_ip_addr.placeholder = "0.0.0.0/0"
+luci.ip.neighbors({ family = 4 }, function(entry)
+	if entry.reachable then
+		acl_ip_addr:value(entry.dest:string())
+	end
+end)
+
+acl_filter_mode = acl_rule:option(ListValue, "filter_mode", translate("规则"))
+acl_filter_mode.width = "40%"
+acl_filter_mode.default = "disable_all"
+acl_filter_mode.rmempty = false
+acl_filter_mode:value("disable_all", translate("不代理HTTP和HTTPS"))
+acl_filter_mode:value("disable_http", translate("不代理HTTP"))
+acl_filter_mode:value("disable_https", translate("不代理HTTPS"))
 
 return mp
